@@ -1,0 +1,2204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Qibla & Jadwal Sholat - Offline</title>
+  <style>
+    /* ===== Style Modal Bantuan ===== */
+    #helpModal {
+      display: none;
+      position: fixed;
+      left: 0; top: 0;
+      width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.72);
+      z-index: 1001;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.3s;
+    }
+    #helpModal[style*="block"] {
+      display: flex !important;
+    }
+
+    #prayerAlertTop {
+      text-align: center;
+      position: absolute;
+      top: 18px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 11;
+      font-size: 1.17em;
+      background: #111b;
+      border-radius: 10px;
+      box-shadow: 0 0 16px #f66a;
+      padding: 7px 18px;
+      font-weight: bold;
+      color: #f66;
+      pointer-events: auto;
+    }
+
+    .help-modal-content {
+      background: #191c18f8;
+      color: #FFD966;
+      border-radius: 16px;
+      box-shadow: 0 0 32px #0ff6, 0 0 12px #FFD96688 inset;
+      padding: 26px 22px 18px 28px;
+      max-width: 94vw;
+      min-width: 270px;
+      width: 360px;
+      font-size: 1.14em;
+      line-height: 1.66;
+      position: relative;
+    }
+
+    .help-modal-close {
+      position: absolute;
+      top: 14px; right: 20px;
+      font-size: 1.32em;
+      color: #FFD966;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color 0.18s;
+    }
+    .help-modal-close:hover {
+      color: #fff05c;
+    }
+    .help-modal-content ul,
+    .help-modal-content ol {
+      margin-bottom: 0.7em;
+    }
+    .help-modal-content .highlight,
+    .help-modal-content .important {
+      color: #ffe680;
+      font-weight: bold;
+    }
+    .help-modal-content .footer {
+      margin-top: 1em;
+      font-size: 1em;
+      text-align: right;
+      opacity: 0.72;
+    }
+
+    @media (max-width:600px) {
+      .help-modal-content {
+        width: 97vw;
+        min-width: unset;
+        padding: 16px 6vw 10px 6vw;
+        font-size: 1em;
+      }
+    }
+
+    /* ===== Style umum ===== */
+    body {
+      margin: 0; padding: 0;
+      background: #000;
+      color: #FFD966;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #111;
+      width: 95vw;
+      max-width: 420px;
+      height: auto;
+      min-height: 95vh;
+      border-radius: 220px 220px 25px 25px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 0 30px #0ff inset;
+      position: relative;
+    }
+
+    canvas {
+      width: 90%;
+      max-width: 360px;
+      margin: 10px auto;
+      background: transparent;
+    }
+
+    .info-box {
+      background: #000;
+      border-radius: 15px;
+      width: 95%;
+      padding: 8px 4px;
+      text-align: center;
+      border: 1px solid #555;
+      font-size: 18px;
+    }
+
+    .info-box hr {
+      border: 0;
+      border-top: 1px solid #666;
+      margin: 6px 0;
+    }
+
+    .loc-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 6px 0;
+    }
+
+    select, input, button {
+      background: #222;
+      color: #FFD966;
+      font-size: 14px;
+      border: 1px solid #666;
+      border-radius: 5px;
+      padding: 4px;
+    }
+
+    input[type="text"], input[type="number"] {
+      background: #222;
+      color: #888;
+      text-align: center;
+      transition: color 0.2s, border 0.2s;
+      width: 85px;
+    }
+
+    input[type="text"].active,
+    input[type="number"].active {
+      color: #FFD966 !important;
+    }
+
+    input.input-error {
+      border: 2px solid #f55 !important;
+      color: #f55 !important;
+      background: #220 !important;
+    }
+
+    input::placeholder {
+      color: #666;
+      opacity: 1;
+    }
+
+    button {
+      margin-top: 7px;
+      font-size: 1.08em;
+      color: #FFD966;
+      background: #222;
+      border: 1px solid #666;
+      border-radius: 9px;
+      padding: 5px 18px;
+      cursor: pointer;
+    }
+    button:active {
+      background: #444;
+    }
+
+    strong {
+      color: #ffe680;
+      font-size: 1.18em;
+    }
+
+    .manual-heading-row,
+    .manual-location-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 7-10px;
+      width: 100%;
+      margin: 2px 0 0 0;
+    }
+
+    .manual-heading-row label,
+    .manual-location-row label {
+      margin: 0;
+      font-size: 1.06em;
+    }
+
+    .manual-location-row input {
+      margin: 0;
+    }
+
+    #timeNow {
+      display: none !important;
+    }
+
+    #methodSelect {
+      width: 130px;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 7px 1vw;
+      }
+      .info-box {
+        font-size: 15px;
+      }
+      .manual-heading-row label,
+      .manual-location-row label {
+        font-size: 0.97em;
+      }
+      .manual-location-row input,
+      .manual-heading-row input {
+        width: 70px;
+      }
+    }
+.qibla-time-glow {
+  color: #0ff; /* cyan neon */
+  text-shadow:
+    0 0 8px #0ff,
+    0 0 20px #0ff,
+    0 0 30px #0ff;
+  font-weight: bold;
+   
+}
+
+    .help-btn {
+      position: absolute;
+      top: 13px;
+      left: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(48, 224, 255, 0.35);
+      color: #FFD966;
+      border: 2px solid #FFD966;
+      box-shadow: 0 0 12px 4px #FFD96688, 0 0 2px #0008;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35em;
+      backdrop-filter: blur(2.5px);
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+    .help-btn:hover {
+      background: rgba(48, 224, 255, 0.5);
+      color: #fff;
+    }
+
+    /* Blink animation */
+    @keyframes blinkRedBlue {
+      0%, 100% { color: #f66; }
+      50% { color: #0ff; }
+    }
+    .blink-red {
+      animation: blinkRedBlue 1s step-start 0s infinite;
+      font-weight: bold;
+    }
+
+    @keyframes blinkAlert {
+      0%, 100% { color: #f66; background: #222b; }
+      50% { color: #FFD966; background: #f66c; }
+    }
+    .blink-alert {
+      animation: blinkAlert 0.8s linear infinite;
+    }
+
+    @keyframes blinkBgAlert {
+      0%, 100% { background: #111b; box-shadow: 0 0 16px #f66a; }
+      40% { background: #f66b; box-shadow: 0 0 32px #FFD966b; }
+      60% { background: #FFD966c; box-shadow: 0 0 28px #f66c; }
+    }
+    .blink-bg-alert {
+      animation: blinkBgAlert 1s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Tombol Bantuan -->
+    <button class="help-btn" onclick="openHelp()" title="Bantuan">&#10068;</button>
+
+    <!-- Tanggal Hijriah -->
+    <div
+      id="hijriDate"
+      style="
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 0.8em;
+        font-weight: bold;
+        color: #FFD966;
+        text-shadow: 0 2px 10px #0ff, 0 0 6px #000;
+        z-index: 20;
+        pointer-events: none;
+        text-align: right;
+      "
+    ></div>
+
+    <!-- Alert Adzan di atas jam -->
+    <div id="prayerAlertTop" style="display:none;"></div>
+
+    <!-- Canvas Jam Analog Qibla -->
+    <canvas id="qiblaCanvas"></canvas>
+
+    <!-- Pilihan Lokasi & Metode -->
+    <div class="loc-row">
+      <span>📍 Loc:</span>
+      <select id="locSelect"></select>
+      <select id="methodSelect" style="margin-left: 10px;"></select>
+    </div>
+
+    <!-- Info Jadwal Sholat -->
+    <div class="info-box">
+      <div class="time-now" id="timeNow">--:--:--</div>
+      <div id="qiblaInfo"></div>
+       <div id="qiblaTime" style="font-size:1.5em; font-weight:bold; text-shadow:0 0 16px #0ff;"></div>
+      <hr />
+
+      <!-- Manual Input Heading -->
+      <div class="manual-heading-row">
+        <label for="manualHeading"><strong>Manual Input</strong></label>
+        <input type="number" id="manualHeading" placeholder="0-360°" />
+        <button id="btnSetHeading" style="margin-left:4px;" onclick="setManualHeading()">SET</button>
+      </div>
+
+      <!-- Manual Input Lat/Lon -->
+      <div class="manual-location-row">
+        <label for="manualLat">Lat:</label>
+        <input
+          type="text"
+          id="manualLat"
+          placeholder="00° 00.0000 Format: -7 13.3575 / -713.3575 / -7.2226"
+        />
+        <label for="manualLon">Lon:</label>
+        <input
+          type="text"
+          id="manualLon"
+          placeholder="000° 00.0000 Contoh: 112 37.7758 / 112.6296"
+        />
+        <button id="btnSetLoc" style="margin-left:4px;" onclick="setManualLocation()">SET</button>
+      </div>
+
+      <!-- Peringatan Kustom -->
+      <div
+        id="customWarning"
+        style="
+          display: none;
+          margin: 8px auto 0 auto;
+          background: #d33;
+          color: #fff;
+          padding: 5px 16px;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: bold;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 92vw;
+          box-shadow: 0 2px 8px #0008;
+          text-align: center;
+          z-index: 10;
+        "
+      ></div>
+      <hr />
+
+      <div id="prayerTimes">Loading...</div>
+      <div id="countdown"></div>
+      <div id="prayerAlert" style="margin-top: 8px; display: none;"></div>
+      <div
+        id="statusInfo"
+        style="font-size: 14px; margin-top: 6px; color: #fff;"
+      >
+        Mode: Manual
+      </div>
+    </div>
+  </div>
+
+  <audio
+    id="adhanAudio"
+    src="https://www.islamcan.com/audio/adhan/azan1.mp3"
+    preload="auto"
+  ></audio>
+
+  <!-- ======= Modal Bantuan ======= -->
+  <div id="helpModal">
+    <div class="help-modal-content">
+      <button
+        class="help-modal-close"
+        onclick="closeHelp()"
+        title="Tutup"
+      >
+        &times;
+      </button>
+      <h3>
+        <span style="font-size:1.2em;"></span> Petunjuk Penggunaan
+      </h3>
+      <ol>
+        <li>
+          Arahkan posisi angka 12 pada jam analog ke arah
+          <span class="highlight">Haluan (HDG)</span> kapal
+        </li>
+        <li>
+          Masukkan nilai <span class="highlight">HDG kapal</span>
+        </li>
+        <li>
+          Pilih lokasi dari daftar
+          <span class="highlight">📍 Loc: List</span> atau input manual
+          <span class="highlight">Lat/Lon : DD.dddd / DD MM.mmmm / DD MM SS.ss</span>  
+          </li>
+        <li>
+          Icon 🕋 pada jarum jam menunjukan arah Qibla untuk sholat
+        </li>
+        <li>Pilih <span class="highlight">metode jadwal sholat</span> sesuai wilayah.</li>
+      </ol>
+      <ul>
+        <li>Pertanyaan? Hubungi <span class="highlight">Asiana Survey</span>.</li>
+        <li><span class="important">Semoga bermanfaat!</span></li>
+      </ul>
+      <div class="footer">&copy; Qibla & Sholat Offline</div>
+    </div>
+  </div>
+
+  <!-- === adhan.js UMD (minimized, embedded) === -->
+  <script>
+    (function (global, factory) {
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(global.adhan = {}));
+})(this, (function (exports) { 'use strict';
+
+  const Madhab = {
+    Shafi: 'shafi',
+    Hanafi: 'hanafi'
+  };
+  function shadowLength(madhab) {
+    switch (madhab) {
+      case Madhab.Shafi:
+        return 1;
+
+      case Madhab.Hanafi:
+        return 2;
+
+      default:
+        throw 'Invalid Madhab';
+    }
+  }
+
+  const HighLatitudeRule = {
+    MiddleOfTheNight: 'middleofthenight',
+    SeventhOfTheNight: 'seventhofthenight',
+    TwilightAngle: 'twilightangle',
+
+    recommended(coordinates) {
+      if (coordinates.latitude > 48) {
+        return HighLatitudeRule.SeventhOfTheNight;
+      } else {
+        return HighLatitudeRule.MiddleOfTheNight;
+      }
+    }
+
+  };
+
+  class Coordinates {
+    constructor(latitude, longitude) {
+      this.latitude = latitude;
+      this.longitude = longitude;
+    }
+
+  }
+
+  const Rounding = {
+    Nearest: 'nearest',
+    Up: 'up',
+    None: 'none'
+  };
+
+  function dateByAddingDays(date, days) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate() + days;
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
+    return new Date(year, month, day, hours, minutes, seconds);
+  }
+  function dateByAddingMinutes(date, minutes) {
+    return dateByAddingSeconds(date, minutes * 60);
+  }
+  function dateByAddingSeconds(date, seconds) {
+    return new Date(date.getTime() + seconds * 1000);
+  }
+  function roundedMinute(date) {
+    let rounding = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : Rounding.Nearest;
+    const seconds = date.getUTCSeconds();
+    let offset = seconds >= 30 ? 60 - seconds : -1 * seconds;
+
+    if (rounding === Rounding.Up) {
+      offset = 60 - seconds;
+    } else if (rounding === Rounding.None) {
+      offset = 0;
+    }
+
+    return dateByAddingSeconds(date, offset);
+  }
+  function dayOfYear(date) {
+    let returnedDayOfYear = 0;
+    const feb = Astronomical.isLeapYear(date.getFullYear()) ? 29 : 28;
+    const months = [31, feb, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+    for (let i = 0; i < date.getMonth(); i++) {
+      returnedDayOfYear += months[i];
+    }
+
+    returnedDayOfYear += date.getDate();
+    return returnedDayOfYear;
+  }
+  function isValidDate(date) {
+    return date instanceof Date && !isNaN(date.valueOf());
+  }
+
+  function degreesToRadians(degrees) {
+    return degrees * Math.PI / 180.0;
+  }
+  function radiansToDegrees(radians) {
+    return radians * 180.0 / Math.PI;
+  }
+  function normalizeToScale(num, max) {
+    return num - max * Math.floor(num / max);
+  }
+  function unwindAngle(angle) {
+    return normalizeToScale(angle, 360.0);
+  }
+  function quadrantShiftAngle(angle) {
+    if (angle >= -180 && angle <= 180) {
+      return angle;
+    }
+
+    return angle - 360 * Math.round(angle / 360);
+  }
+
+  // Shafaq is the twilight in the sky. Different madhabs define the appearance of
+  // twilight differently. These values are used by the MoonsightingComittee method
+  // for the different ways to calculate Isha.
+  const Shafaq = {
+    // General is a combination of Ahmer and Abyad.
+    General: 'general',
+    // Ahmer means the twilight is the red glow in the sky. Used by the Shafi, Maliki, and Hanbali madhabs.
+    Ahmer: 'ahmer',
+    // Abyad means the twilight is the white glow in the sky. Used by the Hanafi madhab.
+    Abyad: 'abyad'
+  };
+
+  /* eslint-disable max-params, max-lines */
+  const Astronomical = {
+    /* The geometric mean longitude of the sun in degrees. */
+    meanSolarLongitude(julianCentury) {
+      const T = julianCentury;
+      /* Equation from Astronomical Algorithms page 163 */
+
+      const term1 = 280.4664567;
+      const term2 = 36000.76983 * T;
+      const term3 = 0.0003032 * Math.pow(T, 2);
+      const L0 = term1 + term2 + term3;
+      return unwindAngle(L0);
+    },
+
+    /* The geometric mean longitude of the moon in degrees. */
+    meanLunarLongitude(julianCentury) {
+      const T = julianCentury;
+      /* Equation from Astronomical Algorithms page 144 */
+
+      const term1 = 218.3165;
+      const term2 = 481267.8813 * T;
+      const Lp = term1 + term2;
+      return unwindAngle(Lp);
+    },
+
+    ascendingLunarNodeLongitude(julianCentury) {
+      const T = julianCentury;
+      /* Equation from Astronomical Algorithms page 144 */
+
+      const term1 = 125.04452;
+      const term2 = 1934.136261 * T;
+      const term3 = 0.0020708 * Math.pow(T, 2);
+      const term4 = Math.pow(T, 3) / 450000;
+      const Omega = term1 - term2 + term3 + term4;
+      return unwindAngle(Omega);
+    },
+
+    /* The mean anomaly of the sun. */
+    meanSolarAnomaly(julianCentury) {
+      const T = julianCentury;
+      /* Equation from Astronomical Algorithms page 163 */
+
+      const term1 = 357.52911;
+      const term2 = 35999.05029 * T;
+      const term3 = 0.0001537 * Math.pow(T, 2);
+      const M = term1 + term2 - term3;
+      return unwindAngle(M);
+    },
+
+    /* The Sun's equation of the center in degrees. */
+    solarEquationOfTheCenter(julianCentury, meanAnomaly) {
+      const T = julianCentury;
+      /* Equation from Astronomical Algorithms page 164 */
+
+      const Mrad = degreesToRadians(meanAnomaly);
+      const term1 = (1.914602 - 0.004817 * T - 0.000014 * Math.pow(T, 2)) * Math.sin(Mrad);
+      const term2 = (0.019993 - 0.000101 * T) * Math.sin(2 * Mrad);
+      const term3 = 0.000289 * Math.sin(3 * Mrad);
+      return term1 + term2 + term3;
+    },
+
+    /* The apparent longitude of the Sun, referred to the
+          true equinox of the date. */
+    apparentSolarLongitude(julianCentury, meanLongitude) {
+      const T = julianCentury;
+      const L0 = meanLongitude;
+      /* Equation from Astronomical Algorithms page 164 */
+
+      const longitude = L0 + Astronomical.solarEquationOfTheCenter(T, Astronomical.meanSolarAnomaly(T));
+      const Omega = 125.04 - 1934.136 * T;
+      const Lambda = longitude - 0.00569 - 0.00478 * Math.sin(degreesToRadians(Omega));
+      return unwindAngle(Lambda);
+    },
+
+    /* The mean obliquity of the ecliptic, formula
+          adopted by the International Astronomical Union.
+          Represented in degrees. */
+    meanObliquityOfTheEcliptic(julianCentury) {
+      const T = julianCentury;
+      /* Equation from Astronomical Algorithms page 147 */
+
+      const term1 = 23.439291;
+      const term2 = 0.013004167 * T;
+      const term3 = 0.0000001639 * Math.pow(T, 2);
+      const term4 = 0.0000005036 * Math.pow(T, 3);
+      return term1 - term2 - term3 + term4;
+    },
+
+    /* The mean obliquity of the ecliptic, corrected for
+          calculating the apparent position of the sun, in degrees. */
+    apparentObliquityOfTheEcliptic(julianCentury, meanObliquityOfTheEcliptic) {
+      const T = julianCentury;
+      const Epsilon0 = meanObliquityOfTheEcliptic;
+      /* Equation from Astronomical Algorithms page 165 */
+
+      const O = 125.04 - 1934.136 * T;
+      return Epsilon0 + 0.00256 * Math.cos(degreesToRadians(O));
+    },
+
+    /* Mean sidereal time, the hour angle of the vernal equinox, in degrees. */
+    meanSiderealTime(julianCentury) {
+      const T = julianCentury;
+      /* Equation from Astronomical Algorithms page 165 */
+
+      const JD = T * 36525 + 2451545.0;
+      const term1 = 280.46061837;
+      const term2 = 360.98564736629 * (JD - 2451545);
+      const term3 = 0.000387933 * Math.pow(T, 2);
+      const term4 = Math.pow(T, 3) / 38710000;
+      const Theta = term1 + term2 + term3 - term4;
+      return unwindAngle(Theta);
+    },
+
+    nutationInLongitude(julianCentury, solarLongitude, lunarLongitude, ascendingNode) {
+      const L0 = solarLongitude;
+      const Lp = lunarLongitude;
+      const Omega = ascendingNode;
+      /* Equation from Astronomical Algorithms page 144 */
+
+      const term1 = -17.2 / 3600 * Math.sin(degreesToRadians(Omega));
+      const term2 = 1.32 / 3600 * Math.sin(2 * degreesToRadians(L0));
+      const term3 = 0.23 / 3600 * Math.sin(2 * degreesToRadians(Lp));
+      const term4 = 0.21 / 3600 * Math.sin(2 * degreesToRadians(Omega));
+      return term1 - term2 - term3 + term4;
+    },
+
+    nutationInObliquity(julianCentury, solarLongitude, lunarLongitude, ascendingNode) {
+      const L0 = solarLongitude;
+      const Lp = lunarLongitude;
+      const Omega = ascendingNode;
+      /* Equation from Astronomical Algorithms page 144 */
+
+      const term1 = 9.2 / 3600 * Math.cos(degreesToRadians(Omega));
+      const term2 = 0.57 / 3600 * Math.cos(2 * degreesToRadians(L0));
+      const term3 = 0.1 / 3600 * Math.cos(2 * degreesToRadians(Lp));
+      const term4 = 0.09 / 3600 * Math.cos(2 * degreesToRadians(Omega));
+      return term1 + term2 + term3 - term4;
+    },
+
+    altitudeOfCelestialBody(observerLatitude, declination, localHourAngle) {
+      const Phi = observerLatitude;
+      const delta = declination;
+      const H = localHourAngle;
+      /* Equation from Astronomical Algorithms page 93 */
+
+      const term1 = Math.sin(degreesToRadians(Phi)) * Math.sin(degreesToRadians(delta));
+      const term2 = Math.cos(degreesToRadians(Phi)) * Math.cos(degreesToRadians(delta)) * Math.cos(degreesToRadians(H));
+      return radiansToDegrees(Math.asin(term1 + term2));
+    },
+
+    approximateTransit(longitude, siderealTime, rightAscension) {
+      const L = longitude;
+      const Theta0 = siderealTime;
+      const a2 = rightAscension;
+      /* Equation from page Astronomical Algorithms 102 */
+
+      const Lw = L * -1;
+      return normalizeToScale((a2 + Lw - Theta0) / 360, 1);
+    },
+
+    /* The time at which the sun is at its highest point in the sky (in universal time) */
+    correctedTransit(approximateTransit, longitude, siderealTime, rightAscension, previousRightAscension, nextRightAscension) {
+      const m0 = approximateTransit;
+      const L = longitude;
+      const Theta0 = siderealTime;
+      const a2 = rightAscension;
+      const a1 = previousRightAscension;
+      const a3 = nextRightAscension;
+      /* Equation from page Astronomical Algorithms 102 */
+
+      const Lw = L * -1;
+      const Theta = unwindAngle(Theta0 + 360.985647 * m0);
+      const a = unwindAngle(Astronomical.interpolateAngles(a2, a1, a3, m0));
+      const H = quadrantShiftAngle(Theta - Lw - a);
+      const dm = H / -360;
+      return (m0 + dm) * 24;
+    },
+
+    correctedHourAngle(approximateTransit, angle, coordinates, afterTransit, siderealTime, rightAscension, previousRightAscension, nextRightAscension, declination, previousDeclination, nextDeclination) {
+      const m0 = approximateTransit;
+      const h0 = angle;
+      const Theta0 = siderealTime;
+      const a2 = rightAscension;
+      const a1 = previousRightAscension;
+      const a3 = nextRightAscension;
+      const d2 = declination;
+      const d1 = previousDeclination;
+      const d3 = nextDeclination;
+      /* Equation from page Astronomical Algorithms 102 */
+
+      const Lw = coordinates.longitude * -1;
+      const term1 = Math.sin(degreesToRadians(h0)) - Math.sin(degreesToRadians(coordinates.latitude)) * Math.sin(degreesToRadians(d2));
+      const term2 = Math.cos(degreesToRadians(coordinates.latitude)) * Math.cos(degreesToRadians(d2));
+      const H0 = radiansToDegrees(Math.acos(term1 / term2));
+      const m = afterTransit ? m0 + H0 / 360 : m0 - H0 / 360;
+      const Theta = unwindAngle(Theta0 + 360.985647 * m);
+      const a = unwindAngle(Astronomical.interpolateAngles(a2, a1, a3, m));
+      const delta = Astronomical.interpolate(d2, d1, d3, m);
+      const H = Theta - Lw - a;
+      const h = Astronomical.altitudeOfCelestialBody(coordinates.latitude, delta, H);
+      const term3 = h - h0;
+      const term4 = 360 * Math.cos(degreesToRadians(delta)) * Math.cos(degreesToRadians(coordinates.latitude)) * Math.sin(degreesToRadians(H));
+      const dm = term3 / term4;
+      return (m + dm) * 24;
+    },
+
+    /* Interpolation of a value given equidistant
+          previous and next values and a factor
+          equal to the fraction of the interpolated
+          point's time over the time between values. */
+    interpolate(y2, y1, y3, n) {
+      /* Equation from Astronomical Algorithms page 24 */
+      const a = y2 - y1;
+      const b = y3 - y2;
+      const c = b - a;
+      return y2 + n / 2 * (a + b + n * c);
+    },
+
+    /* Interpolation of three angles, accounting for
+          angle unwinding. */
+    interpolateAngles(y2, y1, y3, n) {
+      /* Equation from Astronomical Algorithms page 24 */
+      const a = unwindAngle(y2 - y1);
+      const b = unwindAngle(y3 - y2);
+      const c = b - a;
+      return y2 + n / 2 * (a + b + n * c);
+    },
+
+    /* The Julian Day for the given Gregorian date components. */
+    julianDay(year, month, day) {
+      let hours = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+
+      /* Equation from Astronomical Algorithms page 60 */
+      const trunc = Math.trunc;
+      const Y = trunc(month > 2 ? year : year - 1);
+      const M = trunc(month > 2 ? month : month + 12);
+      const D = day + hours / 24;
+      const A = trunc(Y / 100);
+      const B = trunc(2 - A + trunc(A / 4));
+      const i0 = trunc(365.25 * (Y + 4716));
+      const i1 = trunc(30.6001 * (M + 1));
+      return i0 + i1 + D + B - 1524.5;
+    },
+
+    /* Julian century from the epoch. */
+    julianCentury(julianDay) {
+      /* Equation from Astronomical Algorithms page 163 */
+      return (julianDay - 2451545.0) / 36525;
+    },
+
+    /* Whether or not a year is a leap year (has 366 days). */
+    isLeapYear(year) {
+      if (year % 4 !== 0) {
+        return false;
+      }
+
+      if (year % 100 === 0 && year % 400 !== 0) {
+        return false;
+      }
+
+      return true;
+    },
+
+    seasonAdjustedMorningTwilight(latitude, dayOfYear, year, sunrise) {
+      const a = 75 + 28.65 / 55.0 * Math.abs(latitude);
+      const b = 75 + 19.44 / 55.0 * Math.abs(latitude);
+      const c = 75 + 32.74 / 55.0 * Math.abs(latitude);
+      const d = 75 + 48.1 / 55.0 * Math.abs(latitude);
+
+      const adjustment = function () {
+        const dyy = Astronomical.daysSinceSolstice(dayOfYear, year, latitude);
+
+        if (dyy < 91) {
+          return a + (b - a) / 91.0 * dyy;
+        } else if (dyy < 137) {
+          return b + (c - b) / 46.0 * (dyy - 91);
+        } else if (dyy < 183) {
+          return c + (d - c) / 46.0 * (dyy - 137);
+        } else if (dyy < 229) {
+          return d + (c - d) / 46.0 * (dyy - 183);
+        } else if (dyy < 275) {
+          return c + (b - c) / 46.0 * (dyy - 229);
+        } else {
+          return b + (a - b) / 91.0 * (dyy - 275);
+        }
+      }();
+
+      return dateByAddingSeconds(sunrise, Math.round(adjustment * -60.0));
+    },
+
+    seasonAdjustedEveningTwilight(latitude, dayOfYear, year, sunset, shafaq) {
+      let a, b, c, d;
+
+      if (shafaq === Shafaq.Ahmer) {
+        a = 62 + 17.4 / 55.0 * Math.abs(latitude);
+        b = 62 - 7.16 / 55.0 * Math.abs(latitude);
+        c = 62 + 5.12 / 55.0 * Math.abs(latitude);
+        d = 62 + 19.44 / 55.0 * Math.abs(latitude);
+      } else if (shafaq === Shafaq.Abyad) {
+        a = 75 + 25.6 / 55.0 * Math.abs(latitude);
+        b = 75 + 7.16 / 55.0 * Math.abs(latitude);
+        c = 75 + 36.84 / 55.0 * Math.abs(latitude);
+        d = 75 + 81.84 / 55.0 * Math.abs(latitude);
+      } else {
+        a = 75 + 25.6 / 55.0 * Math.abs(latitude);
+        b = 75 + 2.05 / 55.0 * Math.abs(latitude);
+        c = 75 - 9.21 / 55.0 * Math.abs(latitude);
+        d = 75 + 6.14 / 55.0 * Math.abs(latitude);
+      }
+
+      const adjustment = function () {
+        const dyy = Astronomical.daysSinceSolstice(dayOfYear, year, latitude);
+
+        if (dyy < 91) {
+          return a + (b - a) / 91.0 * dyy;
+        } else if (dyy < 137) {
+          return b + (c - b) / 46.0 * (dyy - 91);
+        } else if (dyy < 183) {
+          return c + (d - c) / 46.0 * (dyy - 137);
+        } else if (dyy < 229) {
+          return d + (c - d) / 46.0 * (dyy - 183);
+        } else if (dyy < 275) {
+          return c + (b - c) / 46.0 * (dyy - 229);
+        } else {
+          return b + (a - b) / 91.0 * (dyy - 275);
+        }
+      }();
+
+      return dateByAddingSeconds(sunset, Math.round(adjustment * 60.0));
+    },
+
+    daysSinceSolstice(dayOfYear, year, latitude) {
+      let daysSinceSolstice = 0;
+      const northernOffset = 10;
+      const southernOffset = Astronomical.isLeapYear(year) ? 173 : 172;
+      const daysInYear = Astronomical.isLeapYear(year) ? 366 : 365;
+
+      if (latitude >= 0) {
+        daysSinceSolstice = dayOfYear + northernOffset;
+
+        if (daysSinceSolstice >= daysInYear) {
+          daysSinceSolstice = daysSinceSolstice - daysInYear;
+        }
+      } else {
+        daysSinceSolstice = dayOfYear - southernOffset;
+
+        if (daysSinceSolstice < 0) {
+          daysSinceSolstice = daysSinceSolstice + daysInYear;
+        }
+      }
+
+      return daysSinceSolstice;
+    }
+
+  };
+
+  class SolarCoordinates {
+    constructor(julianDay) {
+      const T = Astronomical.julianCentury(julianDay);
+      const L0 = Astronomical.meanSolarLongitude(T);
+      const Lp = Astronomical.meanLunarLongitude(T);
+      const Omega = Astronomical.ascendingLunarNodeLongitude(T);
+      const Lambda = degreesToRadians(Astronomical.apparentSolarLongitude(T, L0));
+      const Theta0 = Astronomical.meanSiderealTime(T);
+      const dPsi = Astronomical.nutationInLongitude(T, L0, Lp, Omega);
+      const dEpsilon = Astronomical.nutationInObliquity(T, L0, Lp, Omega);
+      const Epsilon0 = Astronomical.meanObliquityOfTheEcliptic(T);
+      const EpsilonApparent = degreesToRadians(Astronomical.apparentObliquityOfTheEcliptic(T, Epsilon0));
+      /* declination: The declination of the sun, the angle between
+              the rays of the Sun and the plane of the Earth's
+              equator, in degrees.
+              Equation from Astronomical Algorithms page 165 */
+
+      this.declination = radiansToDegrees(Math.asin(Math.sin(EpsilonApparent) * Math.sin(Lambda)));
+      /* rightAscension: Right ascension of the Sun, the angular distance on the
+              celestial equator from the vernal equinox to the hour circle,
+              in degrees.
+              Equation from Astronomical Algorithms page 165 */
+
+      this.rightAscension = unwindAngle(radiansToDegrees(Math.atan2(Math.cos(EpsilonApparent) * Math.sin(Lambda), Math.cos(Lambda))));
+      /* apparentSiderealTime: Apparent sidereal time, the hour angle of the vernal
+              equinox, in degrees.
+              Equation from Astronomical Algorithms page 88 */
+
+      this.apparentSiderealTime = Theta0 + dPsi * 3600 * Math.cos(degreesToRadians(Epsilon0 + dEpsilon)) / 3600;
+    }
+
+  }
+
+  class SolarTime {
+    constructor(date, coordinates) {
+      const julianDay = Astronomical.julianDay(date.getFullYear(), date.getMonth() + 1, date.getDate(), 0);
+      this.observer = coordinates;
+      this.solar = new SolarCoordinates(julianDay);
+      this.prevSolar = new SolarCoordinates(julianDay - 1);
+      this.nextSolar = new SolarCoordinates(julianDay + 1);
+      const m0 = Astronomical.approximateTransit(coordinates.longitude, this.solar.apparentSiderealTime, this.solar.rightAscension);
+      const solarAltitude = -50.0 / 60.0;
+      this.approxTransit = m0;
+      this.transit = Astronomical.correctedTransit(m0, coordinates.longitude, this.solar.apparentSiderealTime, this.solar.rightAscension, this.prevSolar.rightAscension, this.nextSolar.rightAscension);
+      this.sunrise = Astronomical.correctedHourAngle(m0, solarAltitude, coordinates, false, this.solar.apparentSiderealTime, this.solar.rightAscension, this.prevSolar.rightAscension, this.nextSolar.rightAscension, this.solar.declination, this.prevSolar.declination, this.nextSolar.declination);
+      this.sunset = Astronomical.correctedHourAngle(m0, solarAltitude, coordinates, true, this.solar.apparentSiderealTime, this.solar.rightAscension, this.prevSolar.rightAscension, this.nextSolar.rightAscension, this.solar.declination, this.prevSolar.declination, this.nextSolar.declination);
+    }
+
+    hourAngle(angle, afterTransit) {
+      return Astronomical.correctedHourAngle(this.approxTransit, angle, this.observer, afterTransit, this.solar.apparentSiderealTime, this.solar.rightAscension, this.prevSolar.rightAscension, this.nextSolar.rightAscension, this.solar.declination, this.prevSolar.declination, this.nextSolar.declination);
+    }
+
+    afternoon(shadowLength) {
+      // TODO source shadow angle calculation
+      const tangent = Math.abs(this.observer.latitude - this.solar.declination);
+      const inverse = shadowLength + Math.tan(degreesToRadians(tangent));
+      const angle = radiansToDegrees(Math.atan(1.0 / inverse));
+      return this.hourAngle(angle, true);
+    }
+
+  }
+
+  const PolarCircleResolution = {
+    AqrabBalad: 'AqrabBalad',
+    AqrabYaum: 'AqrabYaum',
+    Unresolved: 'Unresolved'
+  };
+  const LATITUDE_VARIATION_STEP = 0.5; // Degrees to add/remove at each resolution step
+
+  const UNSAFE_LATITUDE = 65; // Based on https://en.wikipedia.org/wiki/Midnight_sun
+
+  const isValidSolarTime = solarTime => !isNaN(solarTime.sunrise) && !isNaN(solarTime.sunset);
+
+  const aqrabYaumResolver = function (coordinates, date) {
+    let daysAdded = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 1;
+    let direction = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 1;
+
+    if (daysAdded > Math.ceil(365 / 2)) {
+      return null;
+    }
+
+    const testDate = new Date(date.getTime());
+    testDate.setDate(testDate.getDate() + direction * daysAdded);
+    const tomorrow = dateByAddingDays(testDate, 1);
+    const solarTime = new SolarTime(testDate, coordinates);
+    const tomorrowSolarTime = new SolarTime(tomorrow, coordinates);
+
+    if (!isValidSolarTime(solarTime) || !isValidSolarTime(tomorrowSolarTime)) {
+      return aqrabYaumResolver(coordinates, date, daysAdded + (direction > 0 ? 0 : 1), -direction);
+    }
+
+    return {
+      date,
+      tomorrow,
+      coordinates,
+      solarTime,
+      tomorrowSolarTime
+    };
+  };
+
+  const aqrabBaladResolver = (coordinates, date, latitude) => {
+    const solarTime = new SolarTime(date, { ...coordinates,
+      latitude
+    });
+    const tomorrow = dateByAddingDays(date, 1);
+    const tomorrowSolarTime = new SolarTime(tomorrow, { ...coordinates,
+      latitude
+    });
+
+    if (!isValidSolarTime(solarTime) || !isValidSolarTime(tomorrowSolarTime)) {
+      return Math.abs(latitude) >= UNSAFE_LATITUDE ? aqrabBaladResolver(coordinates, date, latitude - Math.sign(latitude) * LATITUDE_VARIATION_STEP) : null;
+    }
+
+    return {
+      date,
+      tomorrow,
+      coordinates: new Coordinates(latitude, coordinates.longitude),
+      solarTime,
+      tomorrowSolarTime
+    };
+  };
+
+  const polarCircleResolvedValues = (resolver, date, coordinates) => {
+    const defaultReturn = {
+      date,
+      tomorrow: dateByAddingDays(date, 1),
+      coordinates,
+      solarTime: new SolarTime(date, coordinates),
+      tomorrowSolarTime: new SolarTime(dateByAddingDays(date, 1), coordinates)
+    };
+
+    switch (resolver) {
+      case PolarCircleResolution.AqrabYaum:
+        {
+          return aqrabYaumResolver(coordinates, date) || defaultReturn;
+        }
+
+      case PolarCircleResolution.AqrabBalad:
+        {
+          const {
+            latitude
+          } = coordinates;
+          return aqrabBaladResolver(coordinates, date, latitude - Math.sign(latitude) * LATITUDE_VARIATION_STEP) || defaultReturn;
+        }
+
+      default:
+        {
+          return defaultReturn;
+        }
+    }
+  };
+
+  class CalculationParameters {
+    // Madhab to determine how Asr is calculated.
+    madhab = Madhab.Shafi; // Rule to determine the earliest time for Fajr and latest time for Isha
+    // needed for high latitude locations where Fajr and Isha may not truly exist
+    // or may present a hardship unless bound to a reasonable time.
+
+    highLatitudeRule = HighLatitudeRule.MiddleOfTheNight; // Manual adjustments (in minutes) to be added to each prayer time.
+
+    adjustments = {
+      fajr: 0,
+      sunrise: 0,
+      dhuhr: 0,
+      asr: 0,
+      maghrib: 0,
+      isha: 0
+    }; // Adjustments set by a calculation method. This value should not be manually modified.
+
+    methodAdjustments = {
+      fajr: 0,
+      sunrise: 0,
+      dhuhr: 0,
+      asr: 0,
+      maghrib: 0,
+      isha: 0
+    }; // Rule to determine how to resolve prayer times inside the Polar Circle
+    // where daylight or night may persist for more than 24 hours depending
+    // on the season
+
+    polarCircleResolution = PolarCircleResolution.Unresolved; // How seconds are rounded when calculating prayer times
+
+    rounding = Rounding.Nearest; // Used by the MoonsightingCommittee method to determine how to calculate Isha
+
+    shafaq = Shafaq.General;
+
+    constructor( // Name of the method, can be used to apply special behavior in calculations.
+    // This property should not be manually modified.
+    method) {
+      let fajrAngle = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      let ishaAngle = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+      let ishaInterval = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
+      let maghribAngle = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+      this.method = method;
+      this.fajrAngle = fajrAngle;
+      this.ishaAngle = ishaAngle;
+      this.ishaInterval = ishaInterval;
+      this.maghribAngle = maghribAngle;
+
+      if (this.method === null) {
+        // we don't want a breaking change
+        this.method = 'Other';
+      }
+    }
+
+    nightPortions() {
+      switch (this.highLatitudeRule) {
+        case HighLatitudeRule.MiddleOfTheNight:
+          return {
+            fajr: 1 / 2,
+            isha: 1 / 2
+          };
+
+        case HighLatitudeRule.SeventhOfTheNight:
+          return {
+            fajr: 1 / 7,
+            isha: 1 / 7
+          };
+
+        case HighLatitudeRule.TwilightAngle:
+          return {
+            fajr: this.fajrAngle / 60,
+            isha: this.ishaAngle / 60
+          };
+
+        default:
+          throw `Invalid high latitude rule found when attempting to compute night portions: ${this.highLatitudeRule}`;
+      }
+    }
+
+  }
+
+  const CalculationMethod = {
+    // Muslim World League
+    MuslimWorldLeague() {
+      const params = new CalculationParameters('MuslimWorldLeague', 18, 17);
+      params.methodAdjustments.dhuhr = 1;
+      return params;
+    },
+
+    // Egyptian General Authority of Survey
+    Egyptian() {
+      const params = new CalculationParameters('Egyptian', 19.5, 17.5);
+      params.methodAdjustments.dhuhr = 1;
+      return params;
+    },
+
+    // University of Islamic Sciences, Karachi
+    Karachi() {
+      const params = new CalculationParameters('Karachi', 18, 18);
+      params.methodAdjustments.dhuhr = 1;
+      return params;
+    },
+
+    // Umm al-Qura University, Makkah
+    UmmAlQura() {
+      return new CalculationParameters('UmmAlQura', 18.5, 0, 90);
+    },
+
+    // Dubai
+    Dubai() {
+      const params = new CalculationParameters('Dubai', 18.2, 18.2);
+      params.methodAdjustments = { ...params.methodAdjustments,
+        sunrise: -3,
+        dhuhr: 3,
+        asr: 3,
+        maghrib: 3
+      };
+      return params;
+    },
+
+    // Moonsighting Committee
+    MoonsightingCommittee() {
+      const params = new CalculationParameters('MoonsightingCommittee', 18, 18);
+      params.methodAdjustments = { ...params.methodAdjustments,
+        dhuhr: 5,
+        maghrib: 3
+      };
+      return params;
+    },
+
+    // ISNA
+    NorthAmerica() {
+      const params = new CalculationParameters('NorthAmerica', 15, 15);
+      params.methodAdjustments.dhuhr = 1;
+      return params;
+    },
+
+    // Kuwait
+    Kuwait() {
+      return new CalculationParameters('Kuwait', 18, 17.5);
+    },
+
+    // Qatar
+    Qatar() {
+      return new CalculationParameters('Qatar', 18, 0, 90);
+    },
+
+    // Singapore
+    Singapore() {
+      const params = new CalculationParameters('Singapore', 20, 18);
+      params.methodAdjustments.dhuhr = 1;
+      params.rounding = Rounding.Up;
+      return params;
+    },
+
+    // Institute of Geophysics, University of Tehran
+    Tehran() {
+      const params = new CalculationParameters('Tehran', 17.7, 14, 0, 4.5);
+      return params;
+    },
+
+    // Dianet
+    Turkey() {
+      const params = new CalculationParameters('Turkey', 18, 17);
+      params.methodAdjustments = { ...params.methodAdjustments,
+        sunrise: -7,
+        dhuhr: 5,
+        asr: 4,
+        maghrib: 7
+      };
+      return params;
+    },
+
+    // Other
+    Other() {
+      return new CalculationParameters('Other', 0, 0);
+    }
+
+  };
+
+  const Prayer = {
+    Fajr: 'fajr',
+    Sunrise: 'sunrise',
+    Dhuhr: 'dhuhr',
+    Asr: 'asr',
+    Maghrib: 'maghrib',
+    Isha: 'isha',
+    None: 'none'
+  };
+
+  class TimeComponents {
+    constructor(num) {
+      this.hours = Math.floor(num);
+      this.minutes = Math.floor((num - this.hours) * 60);
+      this.seconds = Math.floor((num - (this.hours + this.minutes / 60)) * 60 * 60);
+      return this;
+    }
+
+    utcDate(year, month, date) {
+      return new Date(Date.UTC(year, month, date, this.hours, this.minutes, this.seconds));
+    }
+
+  }
+
+  class PrayerTimes {
+    // eslint-disable-next-line complexity
+    constructor(coordinates, date, calculationParameters) {
+      this.coordinates = coordinates;
+      this.date = date;
+      this.calculationParameters = calculationParameters;
+      let solarTime = new SolarTime(date, coordinates);
+      let fajrTime;
+      let sunriseTime;
+      let dhuhrTime;
+      let asrTime;
+      let sunsetTime;
+      let maghribTime;
+      let ishaTime;
+      let nightFraction;
+      dhuhrTime = new TimeComponents(solarTime.transit).utcDate(date.getFullYear(), date.getMonth(), date.getDate());
+      sunriseTime = new TimeComponents(solarTime.sunrise).utcDate(date.getFullYear(), date.getMonth(), date.getDate());
+      sunsetTime = new TimeComponents(solarTime.sunset).utcDate(date.getFullYear(), date.getMonth(), date.getDate());
+      const tomorrow = dateByAddingDays(date, 1);
+      let tomorrowSolarTime = new SolarTime(tomorrow, coordinates);
+      const polarCircleResolver = calculationParameters.polarCircleResolution;
+
+      if ((!isValidDate(sunriseTime) || !isValidDate(sunsetTime) || isNaN(tomorrowSolarTime.sunrise)) && polarCircleResolver !== PolarCircleResolution.Unresolved) {
+        const resolved = polarCircleResolvedValues(polarCircleResolver, date, coordinates);
+        solarTime = resolved.solarTime;
+        tomorrowSolarTime = resolved.tomorrowSolarTime;
+        const dateComponents = [date.getFullYear(), date.getMonth(), date.getDate()];
+        dhuhrTime = new TimeComponents(solarTime.transit).utcDate(...dateComponents);
+        sunriseTime = new TimeComponents(solarTime.sunrise).utcDate(...dateComponents);
+        sunsetTime = new TimeComponents(solarTime.sunset).utcDate(...dateComponents);
+      } // eslint-disable-next-line prefer-const
+
+
+      asrTime = new TimeComponents(solarTime.afternoon(shadowLength(calculationParameters.madhab))).utcDate(date.getFullYear(), date.getMonth(), date.getDate());
+      const tomorrowSunrise = new TimeComponents(tomorrowSolarTime.sunrise).utcDate(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+      const night = (Number(tomorrowSunrise) - Number(sunsetTime)) / 1000;
+      fajrTime = new TimeComponents(solarTime.hourAngle(-1 * calculationParameters.fajrAngle, false)).utcDate(date.getFullYear(), date.getMonth(), date.getDate()); // special case for moonsighting committee above latitude 55
+
+      if (calculationParameters.method === 'MoonsightingCommittee' && coordinates.latitude >= 55) {
+        nightFraction = night / 7;
+        fajrTime = dateByAddingSeconds(sunriseTime, -nightFraction);
+      }
+
+      const safeFajr = function () {
+        if (calculationParameters.method === 'MoonsightingCommittee') {
+          return Astronomical.seasonAdjustedMorningTwilight(coordinates.latitude, dayOfYear(date), date.getFullYear(), sunriseTime);
+        } else {
+          const portion = calculationParameters.nightPortions().fajr;
+          nightFraction = portion * night;
+          return dateByAddingSeconds(sunriseTime, -nightFraction);
+        }
+      }();
+
+      if (isNaN(fajrTime.getTime()) || safeFajr > fajrTime) {
+        fajrTime = safeFajr;
+      }
+
+      if (calculationParameters.ishaInterval > 0) {
+        ishaTime = dateByAddingMinutes(sunsetTime, calculationParameters.ishaInterval);
+      } else {
+        ishaTime = new TimeComponents(solarTime.hourAngle(-1 * calculationParameters.ishaAngle, true)).utcDate(date.getFullYear(), date.getMonth(), date.getDate()); // special case for moonsighting committee above latitude 55
+
+        if (calculationParameters.method === 'MoonsightingCommittee' && coordinates.latitude >= 55) {
+          nightFraction = night / 7;
+          ishaTime = dateByAddingSeconds(sunsetTime, nightFraction);
+        }
+
+        const safeIsha = function () {
+          if (calculationParameters.method === 'MoonsightingCommittee') {
+            return Astronomical.seasonAdjustedEveningTwilight(coordinates.latitude, dayOfYear(date), date.getFullYear(), sunsetTime, calculationParameters.shafaq);
+          } else {
+            const portion = calculationParameters.nightPortions().isha;
+            nightFraction = portion * night;
+            return dateByAddingSeconds(sunsetTime, nightFraction);
+          }
+        }();
+
+        if (isNaN(ishaTime.getTime()) || safeIsha < ishaTime) {
+          ishaTime = safeIsha;
+        }
+      }
+
+      maghribTime = sunsetTime;
+
+      if (calculationParameters.maghribAngle) {
+        const angleBasedMaghrib = new TimeComponents(solarTime.hourAngle(-1 * calculationParameters.maghribAngle, true)).utcDate(date.getFullYear(), date.getMonth(), date.getDate());
+
+        if (sunsetTime < angleBasedMaghrib && ishaTime > angleBasedMaghrib) {
+          maghribTime = angleBasedMaghrib;
+        }
+      }
+
+      const fajrAdjustment = (calculationParameters.adjustments.fajr || 0) + (calculationParameters.methodAdjustments.fajr || 0);
+      const sunriseAdjustment = (calculationParameters.adjustments.sunrise || 0) + (calculationParameters.methodAdjustments.sunrise || 0);
+      const dhuhrAdjustment = (calculationParameters.adjustments.dhuhr || 0) + (calculationParameters.methodAdjustments.dhuhr || 0);
+      const asrAdjustment = (calculationParameters.adjustments.asr || 0) + (calculationParameters.methodAdjustments.asr || 0);
+      const maghribAdjustment = (calculationParameters.adjustments.maghrib || 0) + (calculationParameters.methodAdjustments.maghrib || 0);
+      const ishaAdjustment = (calculationParameters.adjustments.isha || 0) + (calculationParameters.methodAdjustments.isha || 0);
+      this.fajr = roundedMinute(dateByAddingMinutes(fajrTime, fajrAdjustment), calculationParameters.rounding);
+      this.sunrise = roundedMinute(dateByAddingMinutes(sunriseTime, sunriseAdjustment), calculationParameters.rounding);
+      this.dhuhr = roundedMinute(dateByAddingMinutes(dhuhrTime, dhuhrAdjustment), calculationParameters.rounding);
+      this.asr = roundedMinute(dateByAddingMinutes(asrTime, asrAdjustment), calculationParameters.rounding);
+      this.sunset = roundedMinute(sunsetTime, calculationParameters.rounding);
+      this.maghrib = roundedMinute(dateByAddingMinutes(maghribTime, maghribAdjustment), calculationParameters.rounding);
+      this.isha = roundedMinute(dateByAddingMinutes(ishaTime, ishaAdjustment), calculationParameters.rounding);
+    }
+
+    timeForPrayer(prayer) {
+      if (prayer === Prayer.Fajr) {
+        return this.fajr;
+      } else if (prayer === Prayer.Sunrise) {
+        return this.sunrise;
+      } else if (prayer === Prayer.Dhuhr) {
+        return this.dhuhr;
+      } else if (prayer === Prayer.Asr) {
+        return this.asr;
+      } else if (prayer === Prayer.Maghrib) {
+        return this.maghrib;
+      } else if (prayer === Prayer.Isha) {
+        return this.isha;
+      } else {
+        return null;
+      }
+    }
+
+    currentPrayer() {
+      let date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
+
+      if (date >= this.isha) {
+        return Prayer.Isha;
+      } else if (date >= this.maghrib) {
+        return Prayer.Maghrib;
+      } else if (date >= this.asr) {
+        return Prayer.Asr;
+      } else if (date >= this.dhuhr) {
+        return Prayer.Dhuhr;
+      } else if (date >= this.sunrise) {
+        return Prayer.Sunrise;
+      } else if (date >= this.fajr) {
+        return Prayer.Fajr;
+      } else {
+        return Prayer.None;
+      }
+    }
+
+    nextPrayer() {
+      let date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
+
+      if (date >= this.isha) {
+        return Prayer.None;
+      } else if (date >= this.maghrib) {
+        return Prayer.Isha;
+      } else if (date >= this.asr) {
+        return Prayer.Maghrib;
+      } else if (date >= this.dhuhr) {
+        return Prayer.Asr;
+      } else if (date >= this.sunrise) {
+        return Prayer.Dhuhr;
+      } else if (date >= this.fajr) {
+        return Prayer.Sunrise;
+      } else {
+        return Prayer.Fajr;
+      }
+    }
+
+  }
+
+  function qibla(coordinates) {
+    const makkah = new Coordinates(21.4225241, 39.8261818); // Equation from "Spherical Trigonometry For the use of colleges and schools" page 50
+
+    const term1 = Math.sin(degreesToRadians(makkah.longitude) - degreesToRadians(coordinates.longitude));
+    const term2 = Math.cos(degreesToRadians(coordinates.latitude)) * Math.tan(degreesToRadians(makkah.latitude));
+    const term3 = Math.sin(degreesToRadians(coordinates.latitude)) * Math.cos(degreesToRadians(makkah.longitude) - degreesToRadians(coordinates.longitude));
+    const angle = Math.atan2(term1, term2 - term3);
+    return unwindAngle(radiansToDegrees(angle));
+  }
+
+  class SunnahTimes {
+    constructor(prayerTimes) {
+      const date = prayerTimes.date;
+      const nextDay = dateByAddingDays(date, 1);
+      const nextDayPrayerTimes = new PrayerTimes(prayerTimes.coordinates, nextDay, prayerTimes.calculationParameters);
+      const nightDuration = (nextDayPrayerTimes.fajr.getTime() - prayerTimes.maghrib.getTime()) / 1000.0;
+      this.middleOfTheNight = roundedMinute(dateByAddingSeconds(prayerTimes.maghrib, nightDuration / 2));
+      this.lastThirdOfTheNight = roundedMinute(dateByAddingSeconds(prayerTimes.maghrib, nightDuration * (2 / 3)));
+    }
+
+  }
+
+  exports.CalculationMethod = CalculationMethod;
+  exports.CalculationParameters = CalculationParameters;
+  exports.Coordinates = Coordinates;
+  exports.HighLatitudeRule = HighLatitudeRule;
+  exports.Madhab = Madhab;
+  exports.PolarCircleResolution = PolarCircleResolution;
+  exports.Prayer = Prayer;
+  exports.PrayerTimes = PrayerTimes;
+  exports.Qibla = qibla;
+  exports.Rounding = Rounding;
+  exports.Shafaq = Shafaq;
+  exports.SunnahTimes = SunnahTimes;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
+
+}));
+//# sourceMappingURL=adhan.umd.js.map
+
+  </script>
+
+  <script>
+    /* === Fungsi bantu utama === */
+
+    // Tampilkan peringatan kustom
+    function showWarning(msg) {
+      const box = document.getElementById("customWarning");
+      box.innerText = msg;
+      box.style.display = "block";
+      clearTimeout(box._hideTimer); // reset timer jika dipanggil berulang
+      box._hideTimer = setTimeout(() => {
+        box.style.display = "none";
+      }, 4000);
+    }
+
+    // Parser Lat/Lon universal yang sudah diperbaiki, bedakan latitude & longitude
+    function parseLatLonUniversalFixed(input, isLatitude) {
+      if (!input) return NaN;
+
+      let str = input
+        .trim()
+        .replace(/[°d]/gi, " ")
+        .replace(/['m]/gi, " ")
+        .replace(/["s]/gi, " ")
+        .replace(/,/g, ".")
+        .replace(/\s+/g, " ");
+
+      let neg = false;
+      if (str[0] === "-") {
+        neg = true;
+        str = str.slice(1).trim();
+      }
+
+      if (/^\d+(\.\d+)?$/.test(str)) {
+        if (/^\d{3,}\.\d+$/.test(str)) {
+          // format: DDD.MM
+          const degLen = isLatitude ? 2 : 3;
+          const deg = parseInt(str.slice(0, degLen));
+          const min = parseFloat(str.slice(degLen));
+          if (min < 0 || min >= 60) return NaN;
+          const val = deg + min / 60;
+          return neg ? -val : val;
+        } else {
+          const val = parseFloat(str);
+          return neg ? -val : val;
+        }
+      }
+
+      let parts = str.split(" ").filter((x) => x.length);
+      if (parts.length === 1) {
+        const val = parseFloat(parts[0]);
+        return neg ? -val : val;
+      }
+      if (parts.length === 2) {
+        const deg = parseFloat(parts[0]);
+        const min = parseFloat(parts[1]);
+        if (min < 0 || min >= 60) return NaN;
+        const val = Math.abs(deg) + min / 60;
+        return neg ? -val : val;
+      }
+      if (parts.length === 3) {
+        const deg = parseFloat(parts[0]);
+        const min = parseFloat(parts[1]);
+        const sec = parseFloat(parts[2]);
+        if (min < 0 || min >= 60 || sec < 0 || sec >= 60) return NaN;
+        const val = Math.abs(deg) + min / 60 + sec / 3600;
+        return neg ? -val : val;
+      }
+
+      return NaN;
+    }
+
+    // Efek aktif input: beri kelas 'active' jika input ada isinya, hilangkan 'input-error' saat edit
+    function addInputActiveEffect(id) {
+      const el = document.getElementById(id);
+      el.addEventListener("input", function () {
+        this.classList.toggle("active", !!this.value);
+        this.classList.remove("input-error");
+      });
+    }
+    addInputActiveEffect("manualLat");
+    addInputActiveEffect("manualLon");
+    addInputActiveEffect("manualHeading");
+
+    /* === Data dan Variabel global === */
+
+    // Daftar lokasi preset
+    const locationMap = {
+      "Ka'bah": { lat: 21.4225, lon: 39.8262 },
+      "Abu Safah": { lat: 26.9558, lon: 50.5252 },
+      Arbi: { lat: 27.8463, lon: 50.3508 },
+      Berri: { lat: 27.2172, lon: 49.7119 },
+      Hasbah: { lat: 28.1695, lon: 49.9078 },
+      Juaymah: { lat: 26.9346, lon: 50.0486 },
+      Karan: { lat: 27.7019, lon: 50.0251 },
+      Marjan: { lat: 28.3737, lon: 49.5983 },
+      "Sea Island": { lat: 26.6681, lon: 50.1837 },
+      Safaniya: { lat: 28.2624, lon: 48.8472 },
+      Tanajib: { lat: 27.7794, lon: 48.877 },
+      Zuluf: { lat: 28.4055, lon: 49.2347 },
+    };
+
+    let selectedLoc = "Ka'bah",
+      heading = 0.0,
+      qiblaBearing = 0;
+
+    // Isi dropdown lokasi
+    const locSelect = document.getElementById("locSelect");
+    Object.keys(locationMap).forEach((n) => {
+      const opt = document.createElement("option");
+      opt.value = n;
+      opt.text = n;
+      if (n === "Ka'bah") opt.selected = true;
+      locSelect.appendChild(opt);
+    });
+    locSelect.onchange = () => {
+      selectedLoc = locSelect.value;
+      updateAll();
+      document.getElementById("statusInfo").innerText = "Mode: Lokasi List";
+    };
+
+    // Metode perhitungan sholat
+    const methodList = {
+      "Umm Al-Qura": "UmmAlQura",
+      "MWL (World League)": "MuslimWorldLeague",
+      Dubai: "Dubai",
+      Qatar: "Qatar",
+      Egypt: "Egyptian",
+      Singapore: "Singapore",
+    };
+    let selectedMethod = "UmmAlQura";
+
+    // Isi dropdown metode
+    const methodSelect = document.getElementById("methodSelect");
+    Object.entries(methodList).forEach(([label, value]) => {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.text = label;
+      if (value === "UmmAlQura") opt.selected = true;
+      methodSelect.appendChild(opt);
+    });
+    methodSelect.onchange = () => {
+      selectedMethod = methodSelect.value;
+      updatePrayerTimes();
+      document.getElementById("statusInfo").innerText =
+        "Mode: " + methodSelect.options[methodSelect.selectedIndex].text;
+    };
+
+    /* === Fungsi Perhitungan Qibla & Jarak === */
+
+    function calculateQiblaBearing(lat, lon) {
+      const kaabaLat = (21.4225 * Math.PI) / 180,
+        kaabaLon = (39.8262 * Math.PI) / 180;
+      const phi = (lat * Math.PI) / 180,
+        lambda = (lon * Math.PI) / 180,
+        dLon = kaabaLon - lambda;
+      const y = Math.sin(dLon),
+        x =
+          Math.cos(phi) * Math.tan(kaabaLat) -
+          Math.sin(phi) * Math.cos(dLon);
+      let bearing = (Math.atan2(y, x) * 180) / Math.PI;
+      return bearing < 0 ? bearing + 360 : bearing;
+    }
+
+    function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius bumi km
+      const toRad = (d) => (d * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Update tampilan qibla dan jarak
+    function updateQibla() {
+      const lat = locationMap[selectedLoc].lat;
+      const lon = locationMap[selectedLoc].lon;
+      qiblaBearing = calculateQiblaBearing(lat, lon);
+      const distance = calculateDistanceKm(lat, lon, 21.4225, 39.8262);
+
+      document.getElementById("qiblaInfo").innerHTML = `${qiblaBearing.toFixed(
+        2
+      )}° <span style="font-size:2em;vertical-align:-5px;"><<🕋>></span> <span title="Jarak ke Ka'bah">${distance.toFixed(
+        0
+      )} km</span>`;
+
+      // Kalkulasi Qibla Time: perbedaan sudut ke jam analog
+      let diff = (qiblaBearing - heading + 360) % 360;
+      let y = diff / 30;
+      let h = Math.trunc(y);
+      let m = Math.round((y - h) * 60);
+      if (m === 60) {
+        m = 0;
+        h++;
+      }
+      if (h >= 12) h -= 12;
+      document.getElementById(
+        "qiblaTime"
+      ).innerHTML = `<span class="qibla-time-glow">Qibla Time=${String(h).padStart(
+        2,
+        "0"
+      )}:${String(m).padStart(2, "0")}</span>`;
+    }
+
+    // Update jam analog waktu saat ini (dengan format 24 jam)
+    function updateClockTime() {
+      document.getElementById("timeNow").innerText = new Date().toLocaleTimeString(
+        "en-GB",
+        { hour12: false }
+      );
+    }
+
+    /* === Variabel & fungsi jadwal sholat dan adhan === */
+
+    let prayerTimes = {},
+      adhanPlayed = {},
+      adhanActive = false,
+      adhanPrayerName = "";
+    let prayerBlinkUntil = {};
+
+    // Update waktu sholat dan tampilkan di layar
+    function updatePrayerTimes() {
+      const now = new Date();
+      const coords = new adhan.Coordinates(
+        locationMap[selectedLoc].lat,
+        locationMap[selectedLoc].lon
+      );
+      const params = adhan.CalculationMethod[selectedMethod]();
+      const times = new adhan.PrayerTimes(coords, now, params);
+
+      const fmt = (d) =>
+        isNaN(d.getTime())
+          ? "Invalid Date"
+          : d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+      prayerTimes = {
+        fajr: fmt(times.fajr),
+        sunrise: fmt(times.sunrise),
+        dhuhr: fmt(times.dhuhr),
+        asr: fmt(times.asr),
+        maghrib: fmt(times.maghrib),
+        isha: fmt(times.isha),
+      };
+
+      let html = "";
+
+// Warning diletakkan di atas!
+if (Object.values(prayerTimes).some((val) => val === "Invalid Date")) {
+  html += `<div style="color:#f66;margin-bottom:7px;font-size:1.14em;"><span style="font-size:1.18em;">&#9888;</span> Lokasi ekstrim: beberapa waktu sholat tidak tersedia.</div>`;
+}
+
+for (let [k, v] of Object.entries(prayerTimes)) {
+  html += `<div id="time-${k}">${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}</div>`;
+}
+document.getElementById("prayerTimes").innerHTML = html;
+
+      adhanPlayed = {};
+    }
+
+    // Fungsi untuk hentikan adhan dan sembunyikan alert
+    function dismissAdhan() {
+      const audio = document.getElementById("adhanAudio");
+      audio.pause();
+      audio.currentTime = 0;
+
+      const alertDiv = document.getElementById("prayerAlertTop");
+      alertDiv.style.display = "none";
+      alertDiv.classList.remove("blink-bg-alert"); // hapus efek berkedip
+
+      adhanActive = false;
+    }
+
+    // Fungsi mainkan adhan jika belum dimainkan pada waktu tertentu
+    function playAdhan(name) {
+      if (!adhanPlayed[name] && !adhanActive) {
+        try {
+          document.getElementById("adhanAudio").play();
+        } catch (e) {
+          console.warn("Audio blocked");
+        }
+        adhanPlayed[name] = true;
+        adhanActive = true;
+
+        adhanPrayerName = name.charAt(0).toUpperCase() + name.slice(1);
+        const alertDiv = document.getElementById("prayerAlertTop");
+        alertDiv.innerHTML = `
+          <span style="color:#f66;font-size:1.08em;font-weight:bold;">
+            Time for Prayer: <span class="blink-alert">${adhanPrayerName}</span>
+          </span>
+          <button onclick="dismissAdhan()" style="margin-left:15px;background:#333;color:#FFD966;border-radius:7px;padding:2px 15px;cursor:pointer;">
+            Dismiss
+          </button>`;
+
+        alertDiv.style.display = "";
+        alertDiv.classList.add("blink-bg-alert"); // tambah efek berkedip
+      }
+    }
+
+    // Cek apakah waktu adzan sudah tiba, atur efek berkedip dan suara adzan
+    function checkAdzan() {
+      const now = new Date();
+      const current = now.getHours() * 60 + now.getMinutes();
+      let nextPrayer = null,
+        nextTime = 9999;
+      let prayerNow = false;
+
+      for (let [k, v] of Object.entries(prayerTimes)) {
+        const [hh, mm] = v.split(":").map(Number),
+          t = hh * 60 + mm;
+        const el = document.getElementById(`time-${k}`);
+        if (!el) continue;
+
+        // Apakah harus berkedip?
+        if (Math.abs(current - t) <= 1) {
+          // Set durasi blink 5 menit jika baru mulai
+          if (!prayerBlinkUntil[k] || Date.now() > prayerBlinkUntil[k]) {
+            prayerBlinkUntil[k] = Date.now() + 5 * 60 * 1000;
+          }
+        }
+
+        // Tampilkan blink hanya selama durasi 5 menit
+        if (prayerBlinkUntil[k] && Date.now() < prayerBlinkUntil[k]) {
+          el.classList.add("blink-red");
+        } else {
+          el.classList.remove("blink-red");
+        }
+
+        // Jika waktu adzan saat ini
+        if (Math.abs(current - t) <= 1) {
+          playAdhan(k);
+          prayerNow = true;
+        }
+
+        // Cari waktu sholat berikutnya
+        if (t > current && t < nextTime) {
+          nextTime = t;
+          nextPrayer = k;
+        }
+      }
+
+      // Jika tidak adzan saat ini dan suara adhan masih aktif, hentikan
+      if (!prayerNow && adhanActive) {
+        dismissAdhan();
+      }
+
+      // Update hitung mundur ke sholat berikutnya
+      if (nextPrayer) {
+        const diff = nextTime - current,
+          h = Math.floor(diff / 60),
+          m = diff % 60;
+        document.getElementById(
+          "countdown"
+        ).innerHTML = `<span style="color:#0ff;">Next: ${nextPrayer} in ${h}h ${m}m</span>`;
+      } else {
+        document.getElementById("countdown").innerText = "";
+      }
+    }
+
+    /* === Konversi Tanggal Hijriah === */
+    function toHijri(gdate) {
+      const m = gdate.getMonth() + 1,
+        d = gdate.getDate(),
+        y = gdate.getFullYear();
+
+      const jd =
+        Math.floor((1461 * (y + 4800 + Math.floor((m - 14) / 12))) / 4) +
+        Math.floor((367 * (m - 2 - 12 * Math.floor((m - 14) / 12))) / 12) -
+        Math.floor(
+          (3 * Math.floor((y + 4900 + Math.floor((m - 14) / 12)) / 100)) / 4
+        ) +
+        d -
+        32075;
+
+      let l = jd - 1948440 + 10632;
+      const n = Math.floor((l - 1) / 10631);
+      l = l - 10631 * n + 354;
+
+      const j =
+        Math.floor((10985 - l) / 5316) * Math.floor((50 * l) / 17719) +
+        Math.floor(l / 5670) * Math.floor((43 * l) / 15238);
+
+      l =
+        l -
+        Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) -
+        Math.floor(j / 16) * Math.floor((15238 * j) / 43) +
+        29;
+
+      const hm = Math.floor((24 * l) / 709);
+      const hd = l - Math.floor((709 * hm) / 24);
+      const hy = 30 * n + j - 30;
+
+      return { hy, hm, hd };
+    }
+    const hijriMonth = [
+      "Muharram",
+      "Safar",
+      "Rabiul Awal",
+      "Rabiul Akhir",
+      "Jumadal Ula",
+      "Jumadal Akhirah",
+      "Rajab",
+      "Sya'ban",
+      "Ramadhan",
+      "Syawwal",
+      "Dzulqa'dah",
+      "Dzulhijjah",
+    ];
+
+    /* === Jam Analog Qibla === */
+
+    const canvas = document.getElementById("qiblaCanvas"),
+      ctx = canvas.getContext("2d");
+
+    function drawClock() {
+      const W = canvas.width,
+        H = canvas.height,
+        r = Math.min(W, H) / 2 - 10,
+        cx = W / 2,
+        cy = H / 2;
+
+      // Bersihkan canvas
+      ctx.clearRect(0, 0, W, H);
+
+      // Lingkaran luar
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = "#0ff";
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 8, 0, 2 * Math.PI);
+      ctx.strokeStyle = "#0ff";
+      ctx.lineWidth = 6;
+      ctx.stroke();
+
+      // Lingkaran dalam hitam
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+      ctx.fillStyle = "#000";
+      ctx.fill();
+
+      // Angka jam
+      ctx.font = r * 0.13 + "px Arial";
+      ctx.fillStyle = "#FFD966";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (let n = 1; n <= 12; n++) {
+        const ang = (n * Math.PI) / 6 - Math.PI / 2;
+        ctx.fillText(n, cx + Math.cos(ang) * (r - 25), cy + Math.sin(ang) * (r - 25));
+      }
+
+      // Tanda menit kecil
+      ctx.strokeStyle = "#FFD966";
+      for (let i = 0; i < 60; i++) {
+        const ang = (i * Math.PI) / 30 - Math.PI / 2;
+        const inner = i % 5 === 0 ? r - 11 : r - 4;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(ang) * inner, cy + Math.sin(ang) * inner);
+        ctx.lineTo(cx + Math.cos(ang) * r, cy + Math.sin(ang) * r);
+        ctx.stroke();
+      }
+
+      // ========================
+      // Tanggal Hijriah di atas jam
+      // ========================
+
+      let now = new Date();
+      let hijriDate = new Date(now);
+      hijriDate.setDate(hijriDate.getDate() - 1); // mundurkan 1 hari untuk hitung hijriah
+
+      const hijri = toHijri(hijriDate);
+      const hijriStr = `${hijri.hd} ${hijriMonth[hijri.hm - 1]} ${hijri.hy} H`;
+      document.getElementById("hijriDate").innerText = hijriStr;
+
+      ctx.save();
+      ctx.font = "bold " + r * 0.13 + "px Arial";
+      ctx.fillStyle = "#FFD966";
+      ctx.shadowColor = "#0ff";
+      ctx.shadowBlur = 10;
+      ctx.textAlign = "center";
+      // ctx.fillText(hijriStr, cx, cy - r - 10); // jika ingin tampil di canvas
+      ctx.restore();
+
+      // ========================
+      // HDG kapal (heading) di tengah jam
+      // ========================
+
+      now = new Date();
+
+      let currPrayer = Object.keys(prayerTimes).find((k) => {
+        let [hh, mm] = prayerTimes[k].split(":").map(Number);
+        let t = hh * 60 + mm;
+        let current = now.getHours() * 60 + now.getMinutes();
+        return Math.abs(current - t) <= 1;
+      });
+
+      let isBlinkPrayer = currPrayer && prayerBlinkUntil[currPrayer] && Date.now() < prayerBlinkUntil[currPrayer];
+
+      ctx.font = r * 0.14 + "px Arial";
+      ctx.shadowColor = "#0ff";
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = isBlinkPrayer
+        ? Math.floor(Date.now() / 500) % 2 === 0
+          ? "#0ff"
+          : "#f66"
+        : "#0ff";
+
+      ctx.fillText(`HDG:${Math.round(heading)}°`, cx, cy + 18);
+      ctx.shadowBlur = 0;
+
+      // ========================
+      // Jarum arah qibla (🕋)
+      // ========================
+
+      const relativeAngle = ((qiblaBearing - heading) * Math.PI) / 180 - Math.PI / 2;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + r * 0.65 * Math.cos(relativeAngle), cy + r * 0.65 * Math.sin(relativeAngle));
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      ctx.font = r * 0.2 + "px Arial";
+      ctx.fillStyle = "red";
+      ctx.save();
+      ctx.shadowColor = "#FFD966";
+      ctx.shadowBlur = 20;
+      ctx.font = r * 0.20 + "px Arial";
+      ctx.fillStyle = "red";
+      ctx.fillText("🕋", cx + r * 0.70 * Math.cos(relativeAngle), cy + r * 0.70 * Math.sin(relativeAngle));
+      ctx.restore();
+
+      ctx.font = "bold " + r * 0.2 + "px Arial";
+      ctx.fillStyle = "#FFD966";
+      ctx.fillText("Vessel", cx, cy - 10);
+
+      ctx.font = r * 0.14 + "px Arial";
+      ctx.shadowColor = "#0ff";
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = "#0ff";
+      ctx.fillText(`HDG:${Math.round(heading)}°`, cx, cy + 18);
+      ctx.shadowBlur = 0;
+    }
+
+    // Resize canvas otomatis responsif
+    function resizeCanvas() {
+      const size = Math.min(window.innerWidth * 0.9, 360);
+      canvas.width = size;
+      canvas.height = size;
+      drawClock();
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    /* === Fungsi Manual Input Heading === */
+    function setManualHeading() {
+      const input = document.getElementById("manualHeading");
+      const btn = document.getElementById("btnSetHeading");
+
+      if (btn.innerText === "SET") {
+        const val = parseFloat(input.value);
+        if (!isNaN(val) && val >= 0 && val <= 360) {
+          heading = val;
+          drawClock();
+          document.getElementById("statusInfo").innerText = "Mode: Manual Heading";
+          input.classList.remove("input-error");
+
+          // Ganti tombol ke CLR dan buat readonly
+          btn.innerText = "CLR";
+          input.readOnly = true;
+        } else {
+          showWarning("Input heading antara 0° - 360°");
+          input.classList.add("input-error");
+          input.focus();
+        }
+      } else {
+        // CLR: clear dan aktifkan input, reset heading dan mode
+        input.value = "";
+        input.readOnly = false;
+        btn.innerText = "SET";
+        input.classList.remove("input-error");
+        input.focus();
+        heading = 0; // reset heading ke default
+        document.getElementById("statusInfo").innerText = "Mode: Lokasi List";
+        updateAll();
+      }
+    }
+
+    /* === Fungsi Manual Input Lokasi === */
+    function setManualLocation() {
+      const latInput = document.getElementById("manualLat");
+      const lonInput = document.getElementById("manualLon");
+      const btn = document.getElementById("btnSetLoc");
+
+      if (btn.innerText === "SET") {
+        latInput.classList.remove("input-error");
+        lonInput.classList.remove("input-error");
+
+        const lat = parseLatLonUniversalFixed(latInput.value.trim(), true); // true = latitude
+        const lon = parseLatLonUniversalFixed(lonInput.value.trim(), false); // false = longitude
+
+        // Validasi input latitude
+        if (isNaN(lat)) {
+          showWarning("Format Lat: -10.5083 or -10 30.5000 or -10 30 30");
+          latInput.classList.add("input-error");
+          latInput.focus();
+          return;
+        }
+        if (lat < -90 || lat > 90) {
+          showWarning("Latitude harus antara -90 dan 90 derajat!");
+          latInput.classList.add("input-error");
+          latInput.focus();
+          return;
+        }
+
+        // Validasi input longitude
+        if (isNaN(lon)) {
+          showWarning("Format Lon: 112.5083 or 112 30.500 or 112 30 30");
+          lonInput.classList.add("input-error");
+          lonInput.focus();
+          return;
+        }
+        if (lon < -180 || lon > 180) {
+          showWarning("Longitude harus antara -180 dan 180 derajat!");
+          lonInput.classList.add("input-error");
+          lonInput.focus();
+          return;
+        }
+
+        // Simpan lokasi custom dan update mode
+        locationMap["Custom"] = { lat, lon };
+        selectedLoc = "Custom";
+        updateAll();
+        document.getElementById("statusInfo").innerText = "Mode: Manual Location";
+
+        // Ganti tombol ke CLR dan set input jadi readonly
+        btn.innerText = "CLR";
+        latInput.readOnly = true;
+        lonInput.readOnly = true;
+      } else {
+        // CLR: reset input dan mode
+        latInput.value = "";
+        lonInput.value = "";
+        latInput.readOnly = false;
+        lonInput.readOnly = false;
+        btn.innerText = "SET";
+        latInput.classList.remove("input-error");
+        lonInput.classList.remove("input-error");
+        latInput.focus();
+
+        if (selectedLoc === "Custom") {
+          selectedLoc = locSelect.value;
+        }
+
+        document.getElementById("statusInfo").innerText = "Mode: Lokasi List";
+        updateAll();
+      }
+    }
+
+    /* === Update semua data sekaligus === */
+    function updateAll() {
+      updateQibla();
+      updatePrayerTimes();
+      drawClock();
+    }
+    updateAll();
+
+    // Interval update tiap detik
+    setInterval(updateClockTime, 1000);
+    setInterval(() => {
+      updateQibla();
+      drawClock();
+    }, 1000);
+    setInterval(checkAdzan, 1000);
+
+    /* === Fungsi modal bantuan === */
+    function openHelp() {
+      document.getElementById("helpModal").style.display = "block";
+    }
+    function closeHelp() {
+      document.getElementById("helpModal").style.display = "none";
+    }
+    window.onclick = function (event) {
+      const modal = document.getElementById("helpModal");
+      if (event.target == modal) modal.style.display = "none";
+    };
+// Program ini dibuat untuk memudahkan penentuan arah Qibla saat berada di kapal.
+// Karena jika menggunakan kompas dari HP, kesalahannya bisa mencapai 10-30 derajat.
+// Dengan memasukkan heading kapal dari gyro, arah Qibla menjadi lebih akurat secara otomatis.
+// Silakan memodifikasi script program ini sesuai kebutuhan Anda, karena program ini masih jauh dari sempurna.
+// Silakan bagikan kepada teman-teman muslim yang lain.
+// Jika ada pertanyaan, silakan menghubungi Asiana Survey atau saya di nomor 08113018666.
+
+
+  </script>
+</body>
+</html>
